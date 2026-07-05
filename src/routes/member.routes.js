@@ -11,7 +11,7 @@ const {
 
 router.post(
   "/",
-  upload("membersPhoto").single("photo"),
+  upload.single("photo"),
   createMember
 );
 
