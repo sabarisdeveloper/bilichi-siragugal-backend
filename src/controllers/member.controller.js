@@ -1,5 +1,22 @@
 const db = require("../config/db");
+const cloudinary = require("../config/cloudinary");
+const streamifier = require("streamifier");
 
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "membersPhoto",
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      },
+    );
+
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
 // Create Member
 const createMember = async (req, res) => {
   try {
@@ -20,7 +37,13 @@ const createMember = async (req, res) => {
     } = req.body;
 
     // Uploaded image filename
-    const photo = req.file ? `${req.file.filename}` : null;
+    let photo = null;
+
+    if (req.file) {
+      const uploadedImage = await uploadToCloudinary(req.file.buffer);
+
+      photo = uploadedImage.secure_url;
+    }
 
     const sql = `
       INSERT INTO members
@@ -78,9 +101,7 @@ const createMember = async (req, res) => {
 // Get Members
 const getMembers = async (req, res) => {
   try {
-    const [rows] = await db.query(
-      "SELECT * FROM members ORDER BY id DESC"
-    );
+    const [rows] = await db.query("SELECT * FROM members ORDER BY id DESC");
 
     return res.status(200).json({
       success: true,
@@ -101,10 +122,7 @@ const getMemberById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [rows] = await db.query(
-      "SELECT * FROM members WHERE id = ?",
-      [id]
-    );
+    const [rows] = await db.query("SELECT * FROM members WHERE id = ?", [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({
