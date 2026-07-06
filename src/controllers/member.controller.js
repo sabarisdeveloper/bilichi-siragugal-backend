@@ -31,11 +31,36 @@ const createMember = async (req, res) => {
       whatsapp,
       email,
       profession,
-      wardNo,
+      ward_no,
       aadhaar,
       address,
     } = req.body;
 
+    if (!aadhaar) {
+      return res.status(400).json({
+        success: false,
+        message: "Aadhaar number is required.",
+      });
+    }
+
+    if (!/^\d{12}$/.test(aadhaar)) {
+      return res.status(400).json({
+        success: false,
+        message: "Aadhaar number must be exactly 12 digits.",
+      });
+    }
+
+    const [existingMember] = await db.query(
+      "SELECT id FROM members WHERE aadhaar = ?",
+      [aadhaar],
+    );
+
+    if (existingMember.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Aadhaar number is already registered.",
+      });
+    }
     // Uploaded image filename
     let photo = null;
 
@@ -78,7 +103,7 @@ const createMember = async (req, res) => {
       whatsapp,
       email,
       profession,
-      wardNo,
+      ward_no,
       aadhaar,
       address,
       photo,
@@ -89,11 +114,18 @@ const createMember = async (req, res) => {
       message: "Member Registered Successfully",
     });
   } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        success: false,
+        message: "Aadhaar number is already registered.",
+      });
+    }
+
     console.error(err);
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: "Internal Server Error",
     });
   }
 };
