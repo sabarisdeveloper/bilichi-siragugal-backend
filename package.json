@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "env-cmd -f .env.local nodemon src/server.js",
+    "dev:prod": "env-cmd -f .env.prod nodemon src/server.js",
     "start": "node src/server.js"
   },
   "keywords": [],
@@ -21,6 +22,7 @@
     "streamifier": "^0.1.1"
   },
   "devDependencies": {
+    "env-cmd": "^11.0.0",
     "nodemon": "^3.1.14"
   }
 }
